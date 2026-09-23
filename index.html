@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Movable Glass Lens</title>
+
+    <!-- Glass Texture & Lens Stylesheet -->
+    <link rel="stylesheet" href="glass.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: #000;
+            user-select: none;
+        }
+
+        /* Fullscreen canvas rendering the wallpaper */
+        #screen {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Wallpaper source -->
+    <img id="wallpaper" src="./wallpaper.png" alt="" style="display:none;">
+
+    <!-- Background screen canvas -->
+    <canvas id="screen"></canvas>
+
+    <!-- Fixed Glass Square: any element with class "glass" gets the full glass
+         effect. It stays exactly where this inline style puts it - centered
+         via left/top + transform, sized 220x220, rounded 10% - nothing here
+         drags or moves it. Everything else (border, shadow, etc.) lives in
+         glass.css. Reuse this same pattern for any shape/size in any project. -->
+    <div class="glass" id="glass"
+        style="width: 220px; height: 220px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 10%;">
+    </div>
+
+
+    <!-- Glass Refraction & Behavior Engine -->
+    <script src="glass.js"></script>
+
+
+</body>
+
+</html>
