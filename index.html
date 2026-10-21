@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Movable Glass Lens</title>
+    <title>Movable Liquid Glass Lenses</title>
 
     <!-- Glass Texture & Lens Stylesheet -->
     <link rel="stylesheet" href="glass.css">
@@ -40,16 +40,45 @@
             pointer-events: none;
         }
 
-        /* Mouse and touch dragging for the glass lens */
-        #glass {
+        /* Both liquid-glass shapes support mouse and touch dragging */
+        .draggable-glass {
             cursor: grab;
             touch-action: none;
             -webkit-user-select: none;
             user-select: none;
         }
 
-        #glass.is-dragging {
+        .draggable-glass.is-dragging {
             cursor: grabbing;
+        }
+
+        /* Keep the square as the main, centered lens */
+        #glass {
+            width: 220px;
+            height: 220px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 10%;
+        }
+
+        /* The circle uses the exact same .glass refraction effect */
+        #glass-circle {
+            width: 150px;
+            height: 150px;
+            left: calc(50% + 190px);
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 11;
+        }
+
+        /* On narrow screens, place the circle below the centered square */
+        @media (max-width: 600px) {
+            #glass-circle {
+                left: 50%;
+                top: calc(50% + 190px);
+            }
         }
     </style>
 </head>
@@ -62,111 +91,120 @@
     <!-- Background screen canvas -->
     <canvas id="screen"></canvas>
 
-    <!-- Movable glass lens -->
-    <div class="glass" id="glass"
-        style="width: 220px; height: 220px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 10%;"
-        aria-label="Movable glass lens">
-    </div>
+    <!-- Movable square liquid-glass lens -->
+    <div class="glass draggable-glass" id="glass" aria-label="Movable square liquid glass lens"></div>
+
+    <!-- Movable circular liquid-glass lens; shares the same glass engine -->
+    <div class="glass draggable-glass" id="glass-circle" aria-label="Movable circular liquid glass lens"></div>
 
     <!-- Glass Refraction & Behavior Engine -->
     <script src="glass.js"></script>
 
     <script>
         (() => {
-            const glass = document.getElementById("glass");
-            if (!glass) return;
+            const lenses = Array.from(document.querySelectorAll(".draggable-glass"));
+            if (!lenses.length) return;
 
-            let activePointerId = null;
-            let pointerOffsetX = 0;
-            let pointerOffsetY = 0;
-            let renderFrame = null;
+            lenses.forEach((lens) => {
+                let activePointerId = null;
+                let pointerOffsetX = 0;
+                let pointerOffsetY = 0;
+                let renderFrame = null;
 
-            glass.addEventListener("pointerdown", (event) => {
-                // Only begin a drag with the primary mouse button or a touch.
-                if (activePointerId !== null || (event.pointerType === "mouse" && event.button !== 0)) {
-                    return;
-                }
+                lens.addEventListener("pointerdown", (event) => {
+                    // Only begin a drag with the primary mouse button or a touch.
+                    if (activePointerId !== null ||
+                        (event.pointerType === "mouse" && event.button !== 0)) {
+                        return;
+                    }
 
-                const rect = glass.getBoundingClientRect();
-                activePointerId = event.pointerId;
-                pointerOffsetX = event.clientX - rect.left;
-                pointerOffsetY = event.clientY - rect.top;
+                    const rect = lens.getBoundingClientRect();
+                    activePointerId = event.pointerId;
+                    pointerOffsetX = event.clientX - rect.left;
+                    pointerOffsetY = event.clientY - rect.top;
 
-                // Convert the initial centered position into pixel coordinates
-                // without visually moving the element on pointer down.
-                glass.style.left = rect.left + "px";
-                glass.style.top = rect.top + "px";
-                glass.style.transform = "none";
-                glass.classList.add("is-dragging");
+                    // Convert the initial centered position into pixel coordinates
+                    // without visually moving the lens on pointer down.
+                    lens.style.left = rect.left + "px";
+                    lens.style.top = rect.top + "px";
+                    lens.style.transform = "none";
+                    lens.classList.add("is-dragging");
 
-                try {
-                    glass.setPointerCapture(event.pointerId);
-                } catch (_) {
-                    // Pointer capture may be unavailable in some older browsers.
-                }
+                    try {
+                        lens.setPointerCapture(event.pointerId);
+                    } catch (_) {
+                        // Pointer capture may be unavailable in some older browsers.
+                    }
 
-                event.preventDefault();
-            });
+                    event.preventDefault();
+                });
 
-            glass.addEventListener("pointermove", (event) => {
-                if (event.pointerId !== activePointerId) return;
+                lens.addEventListener("pointermove", (event) => {
+                    if (event.pointerId !== activePointerId) return;
 
-                const rect = glass.getBoundingClientRect();
-                const maxLeft = Math.max(0, window.innerWidth - rect.width);
-                const maxTop = Math.max(0, window.innerHeight - rect.height);
-                const left = Math.min(maxLeft, Math.max(0, event.clientX - pointerOffsetX));
-                const top = Math.min(maxTop, Math.max(0, event.clientY - pointerOffsetY));
+                    const rect = lens.getBoundingClientRect();
+                    const maxLeft = Math.max(0, window.innerWidth - rect.width);
+                    const maxTop = Math.max(0, window.innerHeight - rect.height);
+                    const left = Math.min(maxLeft, Math.max(0, event.clientX - pointerOffsetX));
+                    const top = Math.min(maxTop, Math.max(0, event.clientY - pointerOffsetY));
 
-                glass.style.left = left + "px";
-                glass.style.top = top + "px";
+                    lens.style.left = left + "px";
+                    lens.style.top = top + "px";
 
-                // Repaint the refraction at its new location at most once per frame.
-                if (renderFrame === null) {
-                    renderFrame = requestAnimationFrame(() => {
-                        renderFrame = null;
-                        if (window.Glass && typeof window.Glass.render === "function") {
-                            window.Glass.render(glass);
-                        }
-                    });
-                }
+                    // Repaint refraction at the new position at most once per frame.
+                    if (renderFrame === null) {
+                        renderFrame = requestAnimationFrame(() => {
+                            renderFrame = null;
+                            if (window.Glass && typeof window.Glass.render === "function") {
+                                window.Glass.render(lens);
+                            }
+                        });
+                    }
 
-                event.preventDefault();
-            });
+                    event.preventDefault();
+                });
 
-            function stopDragging(event) {
-                if (event.pointerId !== activePointerId) return;
+                function stopDragging(event) {
+                    if (event.pointerId !== activePointerId) return;
 
-                activePointerId = null;
-                glass.classList.remove("is-dragging");
-
-                if (renderFrame !== null) {
-                    cancelAnimationFrame(renderFrame);
-                    renderFrame = null;
-                }
-
-                if (window.Glass && typeof window.Glass.render === "function") {
-                    window.Glass.render(glass);
-                }
-            }
-
-            glass.addEventListener("pointerup", stopDragging);
-            glass.addEventListener("pointercancel", stopDragging);
-            glass.addEventListener("lostpointercapture", (event) => {
-                if (event.pointerId === activePointerId) {
                     activePointerId = null;
-                    glass.classList.remove("is-dragging");
+                    lens.classList.remove("is-dragging");
+
+                    if (renderFrame !== null) {
+                        cancelAnimationFrame(renderFrame);
+                        renderFrame = null;
+                    }
+
+                    if (window.Glass && typeof window.Glass.render === "function") {
+                        window.Glass.render(lens);
+                    }
                 }
+
+                lens.addEventListener("pointerup", stopDragging);
+                lens.addEventListener("pointercancel", stopDragging);
+                lens.addEventListener("lostpointercapture", (event) => {
+                    if (event.pointerId === activePointerId) {
+                        activePointerId = null;
+                        lens.classList.remove("is-dragging");
+                    }
+                });
             });
 
-            // Keep the lens within the visible viewport after a resize or rotation.
+            // Keep any lens that has been moved inside the viewport after resize/rotation.
             window.addEventListener("resize", () => {
-                if (activePointerId !== null) return;
+                lenses.forEach((lens) => {
+                    const rect = lens.getBoundingClientRect();
+                    if (lens.style.transform !== "none") return;
 
-                const rect = glass.getBoundingClientRect();
-                if (glass.style.transform !== "none") return;
-
-                glass.style.left = Math.min(Math.max(0, rect.left), Math.max(0, window.innerWidth - rect.width)) + "px";
-                glass.style.top = Math.min(Math.max(0, rect.top), Math.max(0, window.innerHeight - rect.height)) + "px";
+                    lens.style.left = Math.min(
+                        Math.max(0, rect.left),
+                        Math.max(0, window.innerWidth - rect.width)
+                    ) + "px";
+                    lens.style.top = Math.min(
+                        Math.max(0, rect.top),
+                        Math.max(0, window.innerHeight - rect.height)
+                    ) + "px";
+                });
             });
         })();
     </script>
