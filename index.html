@@ -42,6 +42,9 @@
 
         /* Both liquid-glass shapes support mouse and touch dragging */
         .draggable-glass {
+            /* Keep the demo lenses as fixed-position overlays; .glass itself is layout-neutral. */
+            position: fixed;
+            z-index: 10;
             cursor: grab;
             touch-action: none;
             -webkit-user-select: none;
@@ -71,6 +74,10 @@
             transform: translate(-50%, -50%);
             border-radius: 50%;
             z-index: 11;
+
+            /* A smaller undistorted center creates a much wider liquid stretch band. */
+            --glass-distortion-start: 0.58;
+            --glass-shape: circle;
         }
 
         /* On narrow screens, place the circle below the centered square */
