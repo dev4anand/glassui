@@ -65,26 +65,38 @@
             border-radius: 10%;
         }
 
-        /* The circle uses the exact same .glass refraction effect */
-        #glass-circle {
+        /* Shared appearance for both showcase circles */
+        .liquid-circle {
             width: 150px;
             height: 150px;
-            left: calc(50% + 190px);
-            top: 50%;
-            transform: translate(-50%, -50%);
             border-radius: 50%;
             z-index: 11;
-
-            /* A smaller undistorted center creates a much wider liquid stretch band. */
             --glass-distortion-start: 0.58;
             --glass-shape: circle;
         }
 
-        /* On narrow screens, place the circle below the centered square */
+        /* Initial positions; the showcase physics script takes over at runtime. */
+        #glass-circle {
+            left: calc(50% + 190px);
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #glass-circle-2 {
+            left: 25%;
+            top: 72%;
+            transform: translate(-50%, -50%);
+        }
+
         @media (max-width: 600px) {
             #glass-circle {
                 left: 50%;
                 top: calc(50% + 190px);
+            }
+
+            #glass-circle-2 {
+                left: 25%;
+                top: 25%;
             }
         }
     </style>
@@ -101,8 +113,9 @@
     <!-- Movable square liquid-glass lens -->
     <div class="glass draggable-glass" id="glass" aria-label="Movable square liquid glass lens"></div>
 
-    <!-- Movable circular liquid-glass lens; shares the same glass engine -->
-    <div class="glass draggable-glass" id="glass-circle" aria-label="Movable circular liquid glass lens"></div>
+    <!-- Movable circular liquid-glass lenses; both share the same glass engine -->
+    <div class="glass draggable-glass liquid-circle" id="glass-circle" aria-label="First movable circular liquid glass lens"></div>
+    <div class="glass draggable-glass liquid-circle" id="glass-circle-2" aria-label="Second movable circular liquid glass lens"></div>
 
     <!-- Glass Refraction & Behavior Engine -->
     <script src="glass.js"></script>
@@ -213,6 +226,170 @@
                     ) + "px";
                 });
             });
+        })();
+    </script>
+
+    <!-- Showcase-only motion/collision demo. Remove this script to return to static, draggable lenses. -->
+    <script>
+        (() => {
+            const circles = Array.from(document.querySelectorAll(".liquid-circle"));
+            if (circles.length < 2) return;
+
+            const randomBetween = (min, max) => min + Math.random() * (max - min);
+            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+            const states = circles.map((element, index) => {
+                const rect = element.getBoundingClientRect();
+                const width = rect.width || 150;
+                const height = rect.height || 150;
+                const maxX = Math.max(0, window.innerWidth - width);
+                const maxY = Math.max(0, window.innerHeight - height);
+                element.style.transform = "none";
+
+                // Start in separated areas, with a little random variation.
+                const x = clamp(
+                    (index === 0 ? window.innerWidth * 0.20 : window.innerWidth * 0.72) -
+                        width / 2 + randomBetween(-20, 20), 0, maxX
+                );
+                const y = clamp(
+                    (index === 0 ? window.innerHeight * 0.28 : window.innerHeight * 0.70) -
+                        height / 2 + randomBetween(-20, 20), 0, maxY
+                );
+                const angle = randomBetween(0, Math.PI * 2);
+                const speed = randomBetween(85, 155);
+
+                element.style.left = x + "px";
+                element.style.top = y + "px";
+
+                return {
+                    element, x, y, width, height,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    wasDragging: false
+                };
+            });
+
+            function keepInside(state) {
+                const maxX = Math.max(0, window.innerWidth - state.width);
+                const maxY = Math.max(0, window.innerHeight - state.height);
+                if (state.x <= 0) {
+                    state.x = 0;
+                    if (state.vx < 0) state.vx = Math.abs(state.vx);
+                } else if (state.x >= maxX) {
+                    state.x = maxX;
+                    if (state.vx > 0) state.vx = -Math.abs(state.vx);
+                }
+                if (state.y <= 0) {
+                    state.y = 0;
+                    if (state.vy < 0) state.vy = Math.abs(state.vy);
+                } else if (state.y >= maxY) {
+                    state.y = maxY;
+                    if (state.vy > 0) state.vy = -Math.abs(state.vy);
+                }
+            }
+
+            function collide(a, b) {
+                // Let a user drag either circle without the animation fighting back.
+                if (a.element.classList.contains("is-dragging") ||
+                    b.element.classList.contains("is-dragging")) return;
+
+                const ra = Math.min(a.width, a.height) / 2;
+                const rb = Math.min(b.width, b.height) / 2;
+                const acx = a.x + a.width / 2;
+                const acy = a.y + a.height / 2;
+                const bcx = b.x + b.width / 2;
+                const bcy = b.y + b.height / 2;
+                let dx = bcx - acx;
+                let dy = bcy - acy;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                const targetDistance = ra + rb;
+                if (distance >= targetDistance) return;
+
+                if (distance < 0.001) {
+                    const angle = randomBetween(0, Math.PI * 2);
+                    dx = Math.cos(angle);
+                    dy = Math.sin(angle);
+                    distance = 1;
+                }
+
+                const nx = dx / distance;
+                const ny = dy / distance;
+                const overlap = targetDistance - distance;
+
+                // Separate overlapping circles to prevent them sticking together.
+                a.x -= nx * overlap / 2;
+                a.y -= ny * overlap / 2;
+                b.x += nx * overlap / 2;
+                b.y += ny * overlap / 2;
+
+                // Equal-mass elastic collision: exchange velocity along the
+                // collision normal only when the circles are approaching.
+                const closingSpeed = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                if (closingSpeed > 0) {
+                    a.vx -= closingSpeed * nx;
+                    a.vy -= closingSpeed * ny;
+                    b.vx += closingSpeed * nx;
+                    b.vy += closingSpeed * ny;
+                }
+                keepInside(a);
+                keepInside(b);
+            }
+
+            let lastFrame = 0;
+            function animate(timestamp) {
+                const dt = lastFrame
+                    ? Math.min((timestamp - lastFrame) / 1000, 0.035)
+                    : 0;
+                lastFrame = timestamp;
+
+                states.forEach((state) => {
+                    const element = state.element;
+
+                    // Pause physics during existing mouse/touch dragging and
+                    // resume from the user's final position when released.
+                    if (element.classList.contains("is-dragging")) {
+                        state.wasDragging = true;
+                        return;
+                    }
+                    if (state.wasDragging) {
+                        const rect = element.getBoundingClientRect();
+                        state.x = clamp(rect.left, 0, Math.max(0, window.innerWidth - state.width));
+                        state.y = clamp(rect.top, 0, Math.max(0, window.innerHeight - state.height));
+                        state.wasDragging = false;
+                    }
+
+                    state.x += state.vx * dt;
+                    state.y += state.vy * dt;
+                    keepInside(state);
+                });
+
+                collide(states[0], states[1]);
+
+                states.forEach((state) => {
+                    if (state.element.classList.contains("is-dragging")) return;
+                    state.element.style.left = state.x + "px";
+                    state.element.style.top = state.y + "px";
+                    if (window.Glass && typeof window.Glass.render === "function") {
+                        window.Glass.render(state.element);
+                    }
+                });
+
+                window.requestAnimationFrame(animate);
+            }
+
+            window.addEventListener("resize", () => {
+                states.forEach((state) => {
+                    const rect = state.element.getBoundingClientRect();
+                    state.width = rect.width || state.width;
+                    state.height = rect.height || state.height;
+                    state.x = clamp(state.x, 0, Math.max(0, window.innerWidth - state.width));
+                    state.y = clamp(state.y, 0, Math.max(0, window.innerHeight - state.height));
+                    state.element.style.left = state.x + "px";
+                    state.element.style.top = state.y + "px";
+                });
+            });
+
+            window.requestAnimationFrame(animate);
         })();
     </script>
 
