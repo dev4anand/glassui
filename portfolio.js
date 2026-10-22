@@ -88,6 +88,9 @@ function createStars() {
             '<rect width="100%" height="100%" fill="url(#space)"/>' +
             starMarkup + '</svg>';
 
+        image.onload = () => {
+            if (window.Glass) window.Glass.setBackground(image);
+        };
         image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     };
 
