@@ -299,17 +299,6 @@
                 }
 
                 const element = mutation.target;
-                if (mutation.attributeName === "style") {
-                    if (element._glassAttached &&
-                        (element.style.getPropertyValue("--glass-edge") ||
-                         element.style.getPropertyValue("--glass-distortion-start") ||
-                         element.style.getPropertyValue("--glass-refraction") ||
-                         element.style.getPropertyValue("--glass-shape"))) {
-                        render(element);
-                    }
-                    continue;
-                }
-
                 if (matches(element)) attach(element);
                 else detach(element);
 
@@ -321,7 +310,7 @@
             subtree: true,
             childList: true,
             attributes: true,
-            attributeFilter: ["class", "id", "data-glass", "glass-edge", "glass-shape", "style"]
+            attributeFilter: ["class", "id", "data-glass", "glass-edge", "glass-shape"]
         });
     }
 
