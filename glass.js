@@ -23,6 +23,8 @@
     let screenContext = null;
     let observer = null;
     let resizeBound = false;
+    let scrollBound = false;
+    let scrollFrame = null;
     let defaultRefraction = DEFAULT_REFRACTION;
     let defaultEdge = DEFAULT_EDGE;
 
@@ -221,6 +223,38 @@
         }
     }
 
+    // The lens samples viewport coordinates, so refresh visible lenses as a
+    // scrollable page moves beneath them. Off-screen elements wait until they
+    // enter view, avoiding the cost of rendering every card on every scroll.
+    function renderVisible() {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        for (const element of elements) {
+            if (!document.documentElement.contains(element)) {
+                detach(element);
+                continue;
+            }
+
+            const rect = element.getBoundingClientRect();
+            if (
+                rect.bottom >= 0 &&
+                rect.right >= 0 &&
+                rect.top <= viewportHeight &&
+                rect.left <= viewportWidth
+            ) {
+                render(element);
+            }
+        }
+    }
+
+    function scheduleVisibleRender() {
+        if (scrollFrame !== null) return;
+        scrollFrame = requestAnimationFrame(() => {
+            scrollFrame = null;
+            renderVisible();
+        });
+    }
+
     function matches(element) {
         if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
         try {
@@ -330,6 +364,15 @@
             window.addEventListener("resize", resizeBackground);
             resizeBound = true;
         }
+
+        if (!scrollBound) {
+            // Capture scroll events from nested scrolling containers as well.
+            window.addEventListener("scroll", scheduleVisibleRender, {
+                passive: true,
+                capture: true
+            });
+            scrollBound = true;
+        }
     }
 
     function create(options = {}) {
@@ -391,6 +434,7 @@
         detach,
         render,
         renderAll,
+        renderVisible,
         resize: resizeBackground,
         create,
         setBackground,
