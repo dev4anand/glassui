@@ -71,8 +71,6 @@
             height: 150px;
             border-radius: 50%;
             z-index: 11;
-            --glass-distortion-start: 0.58;
-            --glass-shape: circle;
         }
 
         /* Initial positions; the showcase physics script takes over at runtime. */
@@ -114,8 +112,8 @@
     <div class="glass draggable-glass" id="glass" aria-label="Movable square liquid glass lens"></div>
 
     <!-- Movable circular liquid-glass lenses; both share the same glass engine -->
-    <div class="glass draggable-glass liquid-circle" id="glass-circle" aria-label="First movable circular liquid glass lens"></div>
-    <div class="glass draggable-glass liquid-circle" id="glass-circle-2" aria-label="Second movable circular liquid glass lens"></div>
+    <div class="glass draggable-glass liquid-circle" id="glass-circle" glass-edge="42%" glass-shape="circle" aria-label="First movable circular liquid glass lens"></div>
+    <div class="glass draggable-glass liquid-circle" id="glass-circle-2" glass-edge="42%" glass-shape="circle" aria-label="Second movable circular liquid glass lens"></div>
 
     <!-- Glass Refraction & Behavior Engine -->
     <script src="glass.js"></script>
