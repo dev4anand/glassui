@@ -1,91 +1,60 @@
-# GlassUI — reusable liquid-glass effect
+# GlassUI
 
-GlassUI provides a reusable refraction lens. Copy **`glass.css`** and **`glass.js`** into another project, then opt in the elements that should have the effect.
+Reusable liquid-glass refraction for any HTML element. Copy `glass.css` and `glass.js` into a project.
 
-## 1. Add the files
+## Basic use
 
-Include the stylesheet and JavaScript in your page:
+Provide the image whose pixels should be refracted, include the files, then add `class="glass"` to any section, card, or div:
 
 ```html
 <link rel="stylesheet" href="./glass.css">
-```
+<img data-glass-background src="./images/background.jpg" alt="" hidden>
 
-## 2. Choose a background image
-
-The refraction engine samples a supplied image. Use an image from the same origin where possible:
-
-```html
-<img data-glass-background src="./images/wallpaper.jpg" alt="" hidden>
-```
-
-The existing demo's `#wallpaper` image and `img.glass-wallpaper` convention remain supported. For a background chosen from JavaScript, call `Glass.setBackground(document.querySelector("#my-image"))`.
-
-## 3. Add the `glass` class
-
-The simplest option is to add `class="glass"` to any `div`, `section`, card, or other container. Keep its dimensions, position, and shape in your own CSS:
-
-```html
-<section class="glass info-card">
-  <h2>Glass panel</h2>
-  <p>Your content stays above the refraction canvas.</p>
+<section class="glass card" glass-edge="35%">
+  <h2>Liquid glass</h2>
+  <p>Normal content goes here.</p>
 </section>
-```
 
-```css
-.info-card {
-  width: min(90vw, 420px);
-  min-height: 180px;
-  border-radius: 24px;
-  padding: 24px;
-}
-```
-
-Then load the script, preferably near the end of the body:
-
-```html
 <script src="./glass.js"></script>
 ```
 
-Ordinary `.glass` elements stay in normal document layout; the CSS does **not** force them to be fixed overlays. The demo adds `position: fixed` only to its draggable lenses.
+Set the element's size, position, padding, and shape using your own CSS. The glass stylesheet does not force elements to be fixed overlays. The engine automatically adds its internal canvas.
 
-## Target a custom class or ID instead
-
-You can let the engine select a custom class or ID without adding `class="glass"` manually:
+You can also opt in with `data-glass` or just the `glass-edge` attribute. To target a custom class or ID without adding `glass`, configure the script selector:
 
 ```html
-<section id="hero-panel">...</section>
 <script src="./glass.js" data-glass-selector=".glass, #hero-panel"></script>
 ```
 
-Any target matched by `data-glass-selector` automatically receives the `glass` styling class. You can also use `data-glass` as an opt-in attribute with the default setup.
+## Tune the refraction
 
-## Tune the effect per element
+`glass-edge` controls how far the stretch extends inward from the edge. A larger value creates a wider stretched band. Use a decimal from `0` to `1`, or a percentage:
 
-Use CSS variables on the element or its ID/class. Lower `--glass-distortion-start` to widen the area that stretches the background. The circle in the demo uses `0.58`, giving it a broader stretch band than the default `0.8`.
+```html
+<div class="glass" glass-edge="20%">Default-width edge band</div>
+<div class="glass" glass-edge="45%">Wider liquid stretch</div>
+<div class="glass" glass-edge="45%" glass-shape="circle">Circular lens</div>
+```
+
+You can use CSS variables instead:
 
 ```css
-#hero-panel {
-  --glass-refraction: 0.38;          /* bend strength */
-  --glass-distortion-start: 0.65;    /* lower = wider stretch band */
-  border-radius: 24px;
+.card {
+  --glass-edge: 0.35;
+  --glass-refraction: 0.38;
 }
 
-/* Circular lens: make the stretch follow its circular perimeter */
-#glass-circle {
+.circle {
+  --glass-edge: 45%;
   --glass-shape: circle;
-  --glass-distortion-start: 0.58;
-  width: 150px;
-  height: 150px;
   border-radius: 50%;
 }
 ```
 
-- `--glass-refraction`: amount of refraction/bending.
-- `--glass-distortion-start`: normalized distance from the center where stretching begins; lower values make the stretched band wider.
-- `--glass-shape: circle`: use radial distortion for a circle so the stretch band follows the round edge.
+The previous `--glass-distortion-start` variable remains supported for compatibility. A lower distortion-start value means a wider edge band.
 
-The JavaScript API also retains `Glass.create()`, `Glass.attach()`, `Glass.detach()`, `Glass.render()`, `Glass.setBackground()`, `Glass.setRefraction()`, and `Glass.setDistortionStart()`.
+## Background and API
 
-## Important background note
+GlassUI refracts pixels from an image; it does not capture arbitrary HTML behind the element. The source image should align with the page backdrop. Same-origin images are easiest; remote images need CORS permission for canvas pixel access. The demo's `#wallpaper`, `img.glass-wallpaper`, and `img[src*="wallpaper"]` conventions remain supported.
 
-GlassUI refracts the supplied source image. It does not take a screenshot of arbitrary HTML behind an element. Use the same image as the page's backdrop (or supply your intended backdrop image) for the refraction to line up visually. Remote images must permit canvas pixel access through CORS; a same-origin image is the simplest option.
+The JavaScript API includes `Glass.attach()`, `Glass.detach()`, `Glass.render()`, `Glass.renderAll()`, `Glass.resize()`, `Glass.create()`, `Glass.setBackground()`, `Glass.setSelector()`, `Glass.setRefraction()`, `Glass.setEdge()`, and the compatibility method `Glass.setDistortionStart()`.
