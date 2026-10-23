@@ -1,222 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f5f5f7">
-<title>Liquid Glass Playground — GlassUI</title>
-<meta name="description" content="Interactive LiquidGlass playground for tuning WebGL glass parameters in real time.">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10131c">
+<title>GlassUI — LiquidGlass Layout Demo</title>
+<meta name="description" content="A complete dummy website layout using LiquidGlass: transparent header, hero, cards, carousel and footer.">
 <style>
-  :root { color-scheme: light; --ink:#292929; --muted:#727272; --line:#dedee1; --accent:#4949e8; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:#f5f5f7; }
-  .page { max-width:1040px; width:calc(100% - 40px); margin:26px auto 64px; }
-  h1 { font-size:clamp(27px,3.2vw,34px); letter-spacing:-.04em; line-height:1.15; margin:0 0 16px; }
-  .intro { color:#4c4c50; font-size:17px; line-height:1.65; max-width:890px; margin:0 0 22px; }
-  .playground { display:grid; grid-template-columns:minmax(300px,460px) minmax(320px,1fr); align-items:center; gap:32px; }
-  .controls { display:grid; gap:12px; }
-  .control { display:grid; grid-template-columns:136px minmax(75px,1fr) 42px; align-items:center; gap:12px; min-height:17px; }
-  .control label { font-size:14px; color:#48484c; }
-  input[type=range] { appearance:none; -webkit-appearance:none; width:100%; height:6px; border-radius:999px; background:#dcdcdf; outline:none; cursor:pointer; }
-  input[type=range]::-webkit-slider-thumb { appearance:none; -webkit-appearance:none; height:15px; width:15px; border:1px solid #9b9b9e; border-radius:50%; background:#f5f5f7; box-shadow:0 1px 2px #00000008; }
-  input[type=range]::-moz-range-thumb { height:14px; width:14px; border:1px solid #9b9b9e; border-radius:50%; background:#f5f5f7; }
-  output { text-align:right; font-size:12px; color:#85858a; font-variant-numeric:tabular-nums; }
-  .preview-wrap { min-width:0; }
-  #glass-root { position:relative; isolation:isolate; overflow:hidden; width:100%; height:424px; border-radius:18px; background:#243d2a; }
-  .scene { position:absolute; inset:0; }
-  .scene img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
-  .scene::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,#06120d08,#07140b27); pointer-events:none; }
-  .glass-panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:178px; height:88px; display:grid; place-items:center; color:#fff; font-size:16px; font-weight:700; text-shadow:0 1px 8px #0006; border:1px solid #ffffff45; border-radius:40px; cursor:grab; touch-action:none; user-select:none; z-index:2; }
-  .glass-panel:active { cursor:grabbing; }
-  .preview-caption { color:#85858a; font-size:12px; line-height:1.5; margin:10px 2px 0; }
-  h2 { font-size:27px; letter-spacing:-.035em; margin:46px 0 12px; }
-  .section-copy { color:#68686e; font-size:14px; line-height:1.65; margin:0 0 18px; }
-  .config-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-  .config-card { padding:16px 18px; border:1px solid #e5e5e8; border-radius:14px; background:#fff; }
-  .config-card strong { display:block; font-size:13px; margin-bottom:8px; }
-  .config-card code { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; color:#56565d; }
-  .config-actions { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0; }
-  button { border:1px solid #d5d5da; background:#fff; padding:10px 14px; border-radius:10px; color:#303036; font:inherit; font-size:13px; cursor:pointer; }
-  button:hover { border-color:#aaaab2; background:#fafafd; }
-  .status { color:#6e6e75; font-size:12px; min-height:18px; margin:4px 0 0; }
-  .error { color:#a22; }
-  @media(max-width:800px) {
-    .page { width:calc(100% - 28px); margin-top:22px; }
-    .playground { grid-template-columns:1fr; gap:24px; }
-    .controls { gap:13px; }
-    #glass-root { height:min(68vw,420px); min-height:270px; }
-    .config-grid { grid-template-columns:1fr; }
-  }
-  @media(max-width:430px) {
-    .control { grid-template-columns:112px minmax(55px,1fr) 36px; gap:8px; }
-    .control label { font-size:12px; }
-  }
-  @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
+:root{color-scheme:dark;--line:rgba(255,255,255,.25);--radius:26px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:#fff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#10131c url("./wallpaper.png") center/cover fixed no-repeat;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(8,10,20,.18),rgba(8,10,20,.4))}
+.page-shell{width:min(1180px,calc(100% - 40px));margin:0 auto;padding-bottom:36px}
+.glass-root{position:relative;isolation:isolate;min-width:0}
+.root-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;z-index:-1}
+.glass{position:relative;isolation:isolate;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.27);box-shadow:inset 0 1px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.04),0 18px 55px rgba(0,0,0,.13);backdrop-filter:none;-webkit-backdrop-filter:none;overflow:visible}
+.glass:after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;border:1px solid rgba(255,255,255,.07);z-index:4}
+header{position:sticky;top:12px;z-index:20;margin-top:12px;padding:13px 18px;border-radius:22px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.12));border:1px solid #ffffff80}
+.brand-lines{display:grid;gap:6px;width:100px}.line{display:block;height:7px;border-radius:20px;background:#ffffffb5}.line.short{width:58%;opacity:.55}
+.nav-shapes{display:flex;gap:9px}.nav-shapes span{width:54px;height:11px;border-radius:20px;background:#ffffff35}.nav-shapes span:first-child{background:#ffffff99}.orb{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#ffffff25}
+main{padding:25px 0 0}section{margin-top:26px}
+.hero{min-height:410px;padding:clamp(26px,5vw,58px);border-radius:34px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:34px}
+.hero-placeholder{display:grid;gap:18px;max-width:480px}.eyebrow{width:104px;height:12px;border-radius:20px;background:#ffffff91}.hero-line{height:clamp(22px,3vw,34px);width:94%;border-radius:12px;background:#ffffffc2}.hero-line:nth-child(3){width:72%;opacity:.72}.hero-copy{width:86%;height:10px;border-radius:20px;background:#ffffff45}.hero-copy:last-child{width:62%}
+.hero-art{min-height:265px;border-radius:30px;border:1px solid #ffffff40;background:linear-gradient(145deg,#ffffff30,#ffffff08);position:relative;overflow:hidden}.hero-art:before,.hero-art:after{content:"";position:absolute;border-radius:50%;border:1px solid #ffffff70;background:#ffffff18}.hero-art:before{width:180px;height:180px;top:13%;left:12%}.hero-art:after{width:118px;height:118px;right:10%;bottom:8%}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:0 4px 16px}.heading-placeholder{width:min(220px,45%);height:15px;border-radius:20px;background:#ffffffa6}.heading-placeholder.small{width:72px;height:10px;opacity:.55}
+.card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.placeholder-card{min-height:190px;padding:18px;border-radius:var(--radius)}.card-top{height:98px;border-radius:17px;background:#ffffff20;border:1px solid #ffffff20;margin-bottom:17px}.card-line{height:9px;width:66%;border-radius:20px;background:#ffffff91;margin-top:10px}.card-line.thin{width:42%;height:7px;opacity:.45}
+.carousel-root{border-radius:22px;padding:2px 0 14px;overflow:hidden}
+.carousel{display:grid;grid-auto-flow:column;grid-auto-columns:clamp(225px,28vw,310px);gap:18px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 20px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#ffffff80 #ffffff18;-webkit-overflow-scrolling:touch}
+.carousel-card{min-height:250px;padding:16px;border-radius:var(--radius);scroll-snap-align:start}.carousel-image{height:142px;border-radius:18px;background:#ffffff20;border:1px solid #ffffff20}.carousel-card .card-line{width:76%}.carousel-card .card-line.thin{width:49%}
+.wide-panel{min-height:210px;display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px;border-radius:30px}.wide-block{min-height:160px;border:1px solid #ffffff2b;border-radius:21px;background:#ffffff14}.stack{display:grid;gap:14px;align-content:center;padding:10px}.stack span{display:block;height:10px;width:86%;background:#ffffff6b;border-radius:20px}.stack span:nth-child(2){width:70%;opacity:.65}.stack span:nth-child(3){width:48%;opacity:.42}
+.tile-strip{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:18px}.tile{min-height:155px;border-radius:var(--radius)}.tile:first-child{min-height:210px}
+footer{margin-top:30px;padding:28px;border-radius:28px 28px 0 0;display:flex;align-items:center;justify-content:space-between;gap:22px}.footer-mark{width:96px;height:10px;border-radius:20px;background:#ffffff91}.footer-items{display:flex;gap:10px}.footer-items span{width:42px;height:8px;border-radius:20px;background:#ffffff3d}
+.note{font-size:12px;color:#ffffffa3;text-align:center;margin:18px 0 0}
+@media(max-width:760px){.page-shell{width:calc(100% - 24px)}header{top:8px;padding:11px 13px}.nav-shapes span{width:26px}.hero{grid-template-columns:1fr;gap:24px;min-height:auto;padding:26px}.hero-art{min-height:210px}.card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.placeholder-card{min-height:165px;padding:12px}.card-top{height:78px}.wide-panel{grid-template-columns:1fr}.wide-block{min-height:130px}.tile-strip{grid-template-columns:1fr 1fr;gap:12px}.tile:first-child{grid-column:1/-1;min-height:155px}footer{padding:22px}}
+@media(max-width:420px){.card-grid{grid-template-columns:1fr}.placeholder-card{min-height:155px}.nav-shapes span{width:18px;height:9px}.brand-lines{width:74px}.brand-mark{width:33px;height:33px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
-<main class="page">
-  <h1>Interactive Playground</h1>
-  <p class="intro">Adjust the sliders to see how each parameter affects the glass effect in real time. Drag the glass panel to move it around.</p>
-  <section class="playground" aria-label="Liquid glass playground">
-    <div class="controls" id="controls" aria-label="Glass settings"></div>
-    <div class="preview-wrap">
-      <div id="glass-root">
-        <div class="scene">
-          <img src="./wallpaper.png" alt="" crossorigin="anonymous">
-        </div>
-        <div class="glass-panel" id="glass-panel">Glass</div>
+<div class="page-shell">
+  <header class="glass-root">
+    <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-lines"><span class="line"></span><span class="line short"></span></div></div>
+    <nav class="nav-shapes" aria-label="Decorative navigation"><span></span><span></span><span></span></nav><div class="orb"></div>
+  </header>
+  <main>
+    <section class="hero glass-root">
+      <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+      <div class="hero-placeholder" aria-hidden="true"><span class="eyebrow"></span><span class="hero-line"></span><span class="hero-line"></span><span class="hero-copy"></span><span class="hero-copy"></span></div>
+      <div class="hero-art" aria-hidden="true"></div>
+    </section>
+    <section>
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="card-grid glass-root">
+        <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
       </div>
-      <p class="preview-caption">Drag the glass panel over the image. Slider changes are applied immediately.</p>
-    </div>
-  </section>
-
-  <h2>Configuration Options</h2>
-  <p class="section-copy">These values map to the LiquidGlass configuration. Use “Copy config” to copy the current settings as JSON.</p>
-  <div class="config-grid">
-    <div class="config-card"><strong>Current glass configuration</strong><code id="config-json">{}</code></div>
-    <div class="config-card"><strong>Initialization example</strong><code>const instance = await LiquidGlass.init({
-  root: document.querySelector('#glass-root'),
-  glassElements: [document.querySelector('#glass-panel')]
-});</code></div>
-  </div>
-  <div class="config-actions">
-    <button type="button" id="reset">Reset defaults</button>
-    <button type="button" id="copy">Copy config</button>
-    <button type="button" id="download">Download config.json</button>
-  </div>
-  <p class="status" id="status" role="status">Loading LiquidGlass…</p>
-</main>
-
+    </section>
+    <section>
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="carousel-root glass-root">
+        <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+        <div class="carousel">
+          <div class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+          <div class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+          <div class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+          <div class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+          <div class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+        </div>
+      </div>
+    </section>
+    <section class="wide-panel glass-root">
+      <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+      <div class="wide-block"></div><div class="stack"><span></span><span></span><span></span></div>
+    </section>
+    <section>
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="tile-strip glass-root">
+        <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+        <div class="tile glass"></div><div class="tile glass"></div><div class="tile glass"></div>
+      </div>
+    </section>
+    <section>
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="card-grid glass-root">
+        <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+        <div class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></div>
+      </div>
+    </section>
+  </main>
+  <footer class="glass-root">
+    <img class="root-bg" src="./wallpaper.png" alt="" crossorigin="anonymous">
+    <span class="footer-mark"></span><div class="footer-items"><span></span><span></span><span></span><span></span></div><div class="orb"></div>
+  </footer>
+  <p class="note" id="status">Initializing LiquidGlass…</p>
+</div>
 <script type="module">
-  const controlSpecs = [
-    { key:'blurAmount', label:'Blur Amount', min:0, max:1, step:0.01, value:0, digits:2 },
-    { key:'refraction', label:'Refraction', min:0, max:1.5, step:0.01, value:0.43, digits:2 },
-    { key:'chromAberration', label:'Chrom. Aberration', min:0, max:1, step:0.01, value:0, digits:2 },
-    { key:'edgeHighlight', label:'Edge Highlight', min:0, max:1, step:0.01, value:0.05, digits:2 },
-    { key:'specular', label:'Specular', min:0, max:1, step:0.01, value:0, digits:2 },
-    { key:'fresnel', label:'Fresnel', min:0, max:2, step:0.01, value:1, digits:2 },
-    { key:'distortion', label:'Distortion', min:0, max:1, step:0.01, value:0, digits:2 },
-    { key:'cornerRadius', label:'Corner Radius', min:0, max:100, step:1, value:40, digits:0 },
-    { key:'zRadius', label:'Z-Radius', min:0, max:100, step:1, value:40, digits:0 },
-    { key:'opacity', label:'Opacity', min:0, max:1, step:0.01, value:1, digits:2 },
-    { key:'saturation', label:'Saturation', min:-1, max:1, step:0.01, value:0, digits:2 },
-    { key:'brightness', label:'Brightness', min:-0.5, max:0.5, step:0.01, value:0, digits:2 },
-    { key:'shadowOpacity', label:'Shadow Opacity', min:0, max:1, step:0.01, value:0.3, digits:2 },
-    { key:'shadowSpread', label:'Shadow Spread', min:0, max:50, step:1, value:10, digits:0 },
-    { key:'bevelMode', label:'Bevel Mode', min:0, max:1, step:1, value:0, digits:0 }
-  ];
+import { LiquidGlass } from 'https://cdn.jsdelivr.net/npm/@ybouane/liquidglass/dist/index.js';
 
-  const root = document.querySelector('#glass-root');
-  const glass = document.querySelector('#glass-panel');
-  const controls = document.querySelector('#controls');
-  const status = document.querySelector('#status');
-  const configOutput = document.querySelector('#config-json');
-  let instance = null;
-  let initialized = false;
-  let config = Object.fromEntries(controlSpecs.map(s => [s.key, s.value]));
-
-  function createControls() {
-    controls.innerHTML = controlSpecs.map(spec => `
-      <div class="control">
-        <label for="range-${spec.key}">${spec.label}</label>
-        <input id="range-${spec.key}" type="range" min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${spec.value}" data-key="${spec.key}" aria-label="${spec.label}">
-        <output for="range-${spec.key}" id="value-${spec.key}">${Number(spec.value).toFixed(spec.digits)}</output>
-      </div>`).join('');
-    controls.addEventListener('input', onControlInput);
-  }
-
-  function updateOutput() {
-    configOutput.textContent = JSON.stringify(config, null, 2);
-  }
-
-  function applyConfig() {
-    glass.dataset.config = JSON.stringify({ ...config, floating: true });
-    glass.style.borderRadius = `${config.cornerRadius}px`;
-    glass.style.opacity = String(config.opacity);
-    glass.style.setProperty('--glass-bevel-mode', String(config.bevelMode));
-    updateOutput();
-    if (instance && typeof instance.markChanged === 'function') instance.markChanged();
-  }
-
-  function onControlInput(event) {
-    const input = event.target.closest('input[data-key]');
-    if (!input) return;
-    const spec = controlSpecs.find(s => s.key === input.dataset.key);
-    config[spec.key] = Number(input.value);
-    document.querySelector(`#value-${spec.key}`).textContent = Number(input.value).toFixed(spec.digits);
-    applyConfig();
-  }
-
-  function reset() {
-    config = Object.fromEntries(controlSpecs.map(s => [s.key, s.value]));
-    controlSpecs.forEach(spec => {
-      document.querySelector(`#range-${spec.key}`).value = spec.value;
-      document.querySelector(`#value-${spec.key}`).textContent = Number(spec.value).toFixed(spec.digits);
+const status = document.querySelector('#status');
+const roots = [...document.querySelectorAll('.glass-root')];
+const instances = [];
+try {
+  for (const root of roots) {
+    const panels = [...root.querySelectorAll(':scope > .glass, :scope > header, :scope > .hero, :scope > footer')];
+    // Every panel is a direct child of its own LiquidGlass root; this is required by the library.
+    const instance = await LiquidGlass.init({
+      root,
+      glassElements: panels,
+      defaults: { refraction: 0.48, edgeHighlight: 0.08, cornerRadius: 26, opacity: 0.98 }
     });
-    applyConfig();
-    status.textContent = 'Default settings restored.';
+    instances.push(instance);
   }
-
-  document.querySelector('#reset').addEventListener('click', reset);
-  document.querySelector('#copy').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
-      status.textContent = 'Configuration copied to clipboard.';
-    } catch {
-      status.textContent = 'Clipboard access was blocked. Select and copy the JSON above.';
-    }
-  });
-  document.querySelector('#download').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type:'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'liquidglass-config.json'; a.click();
-    URL.revokeObjectURL(url);
-    status.textContent = 'Configuration download started.';
-  });
-
-  // The library supports drag-to-move via floating:true. A small pointer fallback
-  // keeps the preview movable even if the module fails to load.
-  let dragging = false, pointerOffsetX = 0, pointerOffsetY = 0;
-  glass.addEventListener('pointerdown', event => {
-    if (!initialized) return;
-    const r = glass.getBoundingClientRect();
-    const rootRect = root.getBoundingClientRect();
-    dragging = true;
-    pointerOffsetX = event.clientX - (r.left + r.width / 2);
-    pointerOffsetY = event.clientY - (r.top + r.height / 2);
-    glass.setPointerCapture(event.pointerId);
-    glass.style.transform = 'none';
-    glass.style.left = (r.left - rootRect.left) + 'px';
-    glass.style.top = (r.top - rootRect.top) + 'px';
-  });
-  glass.addEventListener('pointermove', event => {
-    if (!dragging) return;
-    const rr = root.getBoundingClientRect();
-    const maxX = rr.width - glass.offsetWidth / 2, maxY = rr.height - glass.offsetHeight / 2;
-    const x = Math.max(glass.offsetWidth / 2, Math.min(maxX, event.clientX - rr.left - pointerOffsetX + glass.offsetWidth / 2));
-    const y = Math.max(glass.offsetHeight / 2, Math.min(maxY, event.clientY - rr.top - pointerOffsetY + glass.offsetHeight / 2));
-    glass.style.left = x + 'px'; glass.style.top = y + 'px';
-  });
-  function stopDragging() { dragging = false; }
-  glass.addEventListener('pointerup', stopDragging);
-  glass.addEventListener('pointercancel', stopDragging);
-  glass.addEventListener('lostpointercapture', stopDragging);
-
-  createControls();
-  applyConfig();
-
-  try {
-    const { LiquidGlass } = await import('https://cdn.jsdelivr.net/npm/@ybouane/liquidglass/dist/index.js');
-    instance = await LiquidGlass.init({ root, glassElements: [glass] });
-    initialized = true;
-    applyConfig();
-    status.textContent = 'LiquidGlass loaded. Adjust a slider or drag the panel to experiment.';
-  } catch (error) {
-    console.error('LiquidGlass failed to initialize:', error);
-    status.innerHTML = 'LiquidGlass could not load. Run this page through a local web server (not file://) and check that the CDN is reachable. The controls and configuration export still work.';
-    status.classList.add('error');
-  }
+  status.textContent = 'LiquidGlass is active on the header, hero, cards, carousel, panels and footer.';
+} catch (error) {
+  console.error('LiquidGlass initialization failed:', error);
+  status.textContent = 'LiquidGlass could not initialize. Check WebGL/CDN access in the browser console.';
+  status.style.color = '#ffb7b7';
+}
+window.addEventListener('beforeunload', () => instances.forEach(instance => instance.destroy()));
 </script>
 </body>
 </html>
