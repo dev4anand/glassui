@@ -126,14 +126,19 @@
         return defaultEdge;
     }
 
-    function render(element) {
+    function render(element, quality = 1) {
         if (!element || !element._glassCanvas || !backgroundPixels) return;
 
         const rect = element.getBoundingClientRect();
-        const width = Math.round(rect.width);
-        const height = Math.round(rect.height);
-        if (width < 1 || height < 1) return;
+        const logicalWidth = Math.round(rect.width);
+        const logicalHeight = Math.round(rect.height);
+        if (logicalWidth < 1 || logicalHeight < 1) return;
 
+        // Lower quality means fewer pixels to calculate during active scrolling.
+        // The canvas is still displayed at full CSS size, so the refraction remains visible.
+        const scale = clamp(parseNumber(quality, 1), 0.2, 1);
+        const width = Math.max(1, Math.round(logicalWidth * scale));
+        const height = Math.max(1, Math.round(logicalHeight * scale));
         const canvas = element._glassCanvas;
         if (canvas.width !== width || canvas.height !== height) {
             canvas.width = width;
@@ -142,75 +147,58 @@
 
         const context = canvas.getContext("2d");
         if (!context) return;
-
         const frame = context.createImageData(width, height);
         const output = frame.data;
         const input = backgroundPixels.data;
         const backgroundWidth = backgroundPixels.width;
         const backgroundHeight = backgroundPixels.height;
-        const halfWidth = width / 2;
-        const halfHeight = height / 2;
+        const halfWidth = logicalWidth / 2;
+        const halfHeight = logicalHeight / 2;
         const bendScale = Math.min(halfWidth, halfHeight);
         const centerX = rect.left + halfWidth;
         const centerY = rect.top + halfHeight;
         const style = getComputedStyle(element);
-
-        const refraction = Math.max(
-            0,
-            parseNumber(style.getPropertyValue("--glass-refraction"), defaultRefraction)
-        );
+        const refraction = Math.max(0, parseNumber(style.getPropertyValue("--glass-refraction"), defaultRefraction));
         const edge = getEdge(element, style);
-        const shape = (
-            element.getAttribute("glass-shape") ||
-            style.getPropertyValue("--glass-shape") ||
-            ""
-        ).trim().toLowerCase();
+        const shape = (element.getAttribute("glass-shape") || style.getPropertyValue("--glass-shape") || "").trim().toLowerCase();
         const radius = parseNumber(style.borderTopLeftRadius, 0);
         const isCircle = shape === "circle" ||
-            (Math.abs(width - height) < 1 && radius >= Math.min(width, height) / 2 - 1);
+            (Math.abs(logicalWidth - logicalHeight) < 1 && radius >= Math.min(logicalWidth, logicalHeight) / 2 - 1);
 
         for (let y = 0; y < height; y++) {
+            const logicalY = (y + 0.5) / scale;
             for (let x = 0; x < width; x++) {
-                const dx = x - halfWidth;
-                const dy = y - halfHeight;
+                const logicalX = (x + 0.5) / scale;
+                const dx = logicalX - halfWidth;
+                const dy = logicalY - halfHeight;
                 const nx = Math.abs(dx) / halfWidth;
                 const ny = Math.abs(dy) / halfHeight;
-                const normalized = isCircle
-                    ? Math.min(1, Math.sqrt(nx * nx + ny * ny))
-                    : Math.max(nx, ny);
-
+                const normalized = isCircle ? Math.min(1, Math.sqrt(nx * nx + ny * ny)) : Math.max(nx, ny);
                 const progress = clamp((normalized - (1 - edge)) / edge, 0, 1);
                 const smooth = progress * progress * (3 - 2 * progress);
                 const bend = smooth * smooth * refraction * bendScale;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const dirX = distance > 0.001 ? dx / distance : 0;
                 const dirY = distance > 0.001 ? dy / distance : 0;
-
                 const sx = clamp(centerX + dx + dirX * bend, 0, backgroundWidth - 1.001);
                 const sy = clamp(centerY + dy + dirY * bend, 0, backgroundHeight - 1.001);
-                const x0 = Math.floor(sx);
-                const y0 = Math.floor(sy);
+                const x0 = Math.floor(sx), y0 = Math.floor(sy);
                 const x1 = Math.min(x0 + 1, backgroundWidth - 1);
                 const y1 = Math.min(y0 + 1, backgroundHeight - 1);
-                const fx = sx - x0;
-                const fy = sy - y0;
+                const fx = sx - x0, fy = sy - y0;
                 const p00 = (y0 * backgroundWidth + x0) * 4;
                 const p10 = (y0 * backgroundWidth + x1) * 4;
                 const p01 = (y1 * backgroundWidth + x0) * 4;
                 const p11 = (y1 * backgroundWidth + x1) * 4;
                 const index = (y * width + x) * 4;
-
                 for (let channel = 0; channel < 3; channel++) {
-                    const top = input[p00 + channel] * (1 - fx) +
-                        input[p10 + channel] * fx;
-                    const bottom = input[p01 + channel] * (1 - fx) +
-                        input[p11 + channel] * fx;
+                    const top = input[p00 + channel] * (1 - fx) + input[p10 + channel] * fx;
+                    const bottom = input[p01 + channel] * (1 - fx) + input[p11 + channel] * fx;
                     output[index + channel] = top * (1 - fy) + bottom * fy;
                 }
                 output[index + 3] = 255;
             }
         }
-
         context.putImageData(frame, 0, 0);
     }
 
