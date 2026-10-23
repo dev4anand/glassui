@@ -306,12 +306,13 @@
           v_local = a_position;
           vec2 pixel = u_rect.xy + a_position * u_rect.zw;
           vec2 clip = (pixel / u_viewport) * 2.0 - 1.0;
-          gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
+          gl_Position = vec4(clip.x, clip.y, 0.0, 1.0);
         }`;
       const fragmentSource = `
         precision mediump float;
         uniform sampler2D u_wallpaper;
         uniform vec2 u_viewport;
+        uniform vec4 u_rect;
         uniform vec2 u_imageSize;
         uniform vec2 u_panelSize;
         uniform float u_radius;
@@ -356,9 +357,8 @@
           // a small elastic directional bend instead of hiding the glass layer.
           vec2 offset = vec2(nx, ny) * rim * u_refraction * min(u_panelSize.x, u_panelSize.y) * 0.18;
           offset += vec2(moving * rim * 12.0, -moving * rim * 3.0);
-          vec2 panelTopLeft = gl_FragCoord.xy - localPx;
-          vec2 topOrigin = vec2(panelTopLeft.x, u_viewport.y - panelTopLeft.y - u_panelSize.y);
-          vec2 samplePixel = topOrigin + localPx + offset;
+          vec2 topOrigin = vec2(u_rect.x, u_viewport.y - u_rect.y - u_panelSize.y);
+          vec2 samplePixel = topOrigin + vec2(localPx.x, u_panelSize.y - localPx.y) + offset;
           vec4 color = texture2D(u_wallpaper, screenUv(clamp(samplePixel, vec2(0.0), u_viewport)));
           float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
           color.rgb = mix(color.rgb, color.rgb * 1.06 + vec3(0.025), 0.28);
