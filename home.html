@@ -48,7 +48,10 @@
             background: linear-gradient(135deg, rgba(255,255,255,.16), transparent 26%, transparent 70%, rgba(255,255,255,.08));
             opacity: .5;
         }
-        .glass-canvas { filter: saturate(1.08) contrast(1.02); }
+        .glass-canvas { filter: saturate(1.08) contrast(1.02); transition: opacity 90ms linear; }
+        /* Avoid displaying stale refracted pixels while the page is moving. */
+        body.is-scrolling .glass-canvas { opacity: 0; }
+        body.is-scrolling .glass { background: transparent !important; }
 
         header {
             position: sticky;
@@ -286,20 +289,43 @@
 
     <script src="./glass.js"></script>
     <script>
-        // Re-render refraction as page sections move through the viewport.
         (() => {
-            const refresh = () => {
-                if (window.Glass && typeof window.Glass.renderAll === "function") window.Glass.renderAll();
-            };
+            const body = document.body;
+            const panels = () => Array.from(document.querySelectorAll(".glass"));
+            let settleTimer;
             let frame = null;
-            const scheduleRefresh = () => {
-                if (frame !== null) return;
-                frame = requestAnimationFrame(() => { frame = null; refresh(); });
-            };
-            window.addEventListener("scroll", scheduleRefresh, { passive: true });
-            window.addEventListener("resize", scheduleRefresh, { passive: true });
-            window.addEventListener("load", refresh, { once: true });
+
+            // Refract only panels that intersect the viewport, and only after scrolling
+            // pauses. This prevents expensive full-resolution pixel work from competing
+            // with scroll compositing on older machines.
+            function renderVisiblePanels() {
+                frame = null;
+                if (!window.Glass || typeof window.Glass.render !== "function") return;
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                panels().forEach((panel) => {
+                    const rect = panel.getBoundingClientRect();
+                    if (rect.bottom < 0 || rect.top > viewportHeight ||
+                        rect.right < 0 || rect.left > viewportWidth) return;
+                    window.Glass.render(panel);
+                });
+                body.classList.remove("is-scrolling");
+            }
+
+            function scheduleRender() {
+                clearTimeout(settleTimer);
+                body.classList.add("is-scrolling");
+                settleTimer = setTimeout(() => {
+                    if (frame !== null) cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(renderVisiblePanels);
+                }, 140);
+            }
+
+            window.addEventListener("scroll", scheduleRender, { passive: true });
+            window.addEventListener("resize", scheduleRender, { passive: true });
+            window.addEventListener("load", scheduleRender, { once: true });
             if (window.Glass) window.Glass.setRefraction(0.48);
+            scheduleRender();
         })();
     </script>
 </body>
