@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131c">
+<title>GlassUI — Liquid Glass Sample</title>
+<meta name="description" content="A sample page demonstrating LiquidGlass across a complete responsive page layout.">
+<style>
+  :root {
+    color-scheme: dark;
+    --text: #fff;
+    --muted: rgba(255,255,255,.66);
+    --line: rgba(255,255,255,.24);
+    --radius: 26px;
+    --page-width: 1180px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #10131c url("../wallpaper.png") center / cover fixed no-repeat;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+    background: linear-gradient(180deg, rgba(7,10,18,.18), rgba(7,10,18,.35) 48%, rgba(7,10,18,.62));
+  }
+  .page-shell { width: min(var(--page-width), calc(100% - 40px)); margin: 0 auto; padding-bottom: 38px; }
+  /*
+    LiquidGlass requires each configured glass element to be a direct child of its
+    root. Every .glass-surface below therefore owns one .glass-root wrapper.
+  */
+  .glass-root { position: relative; isolation: isolate; min-width: 0; }
+  .glass-root > .glass-background {
+    position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0; pointer-events: none;
+  }
+  .glass {
+    position: relative; isolation: isolate; min-width: 0;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.28);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.3), inset 0 0 24px rgba(255,255,255,.045), 0 18px 52px rgba(0,0,0,.16);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .glass::after {
+    content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none;
+    border: 1px solid rgba(255,255,255,.075); z-index: 5;
+  }
+  header {
+    position: sticky; top: 12px; z-index: 30; margin-top: 12px; padding: 13px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; border-radius: 22px;
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-mark { width:38px; height:38px; border-radius:13px; flex:0 0 auto; background:linear-gradient(135deg,rgba(255,255,255,.84),rgba(255,255,255,.12)); border:1px solid rgba(255,255,255,.58); }
+  .brand-lines { width:102px; display:grid; gap:6px; }
+  .brand-lines span { display:block; height:7px; border-radius:30px; background:rgba(255,255,255,.72); }
+  .brand-lines span:last-child { width:58%; opacity:.55; }
+  .nav-shapes { display:flex; align-items:center; gap:9px; }
+  .nav-shapes span { width:52px; height:11px; border-radius:30px; background:rgba(255,255,255,.23); }
+  .nav-shapes span:first-child { background:rgba(255,255,255,.66); }
+  .avatar { width:36px; height:36px; border:1px solid var(--line); border-radius:50%; background:rgba(255,255,255,.2); }
+  main { padding: 26px 0 0; }
+  section { margin-top: 26px; }
+  .hero {
+    display:grid; grid-template-columns:1.1fr .9fr; align-items:center; gap:34px;
+    min-height:410px; padding:clamp(26px,5vw,58px); border-radius:34px;
+  }
+  .hero-copy { display:grid; align-content:center; gap:18px; }
+  .eyebrow { width:104px; height:12px; border-radius:30px; background:rgba(255,255,255,.55); }
+  .hero-line { width:94%; height:clamp(22px,3vw,34px); border-radius:12px; background:rgba(255,255,255,.76); }
+  .hero-line:nth-child(3) { width:72%; opacity:.72; }
+  .copy-line { width:86%; height:10px; border-radius:30px; background:rgba(255,255,255,.28); }
+  .copy-line:last-child { width:62%; }
+  .hero-art { position:relative; min-height:265px; overflow:hidden; border-radius:30px; border:1px solid rgba(255,255,255,.24); background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.025)); }
+  .hero-art::before,.hero-art::after { content:""; position:absolute; border:1px solid rgba(255,255,255,.4); border-radius:50%; background:rgba(255,255,255,.08); }
+  .hero-art::before { width:180px; height:180px; top:13%; left:12%; }
+  .hero-art::after { width:118px; height:118px; right:10%; bottom:8%; }
+  .section-head { display:flex; align-items:center; justify-content:space-between; gap:20px; margin:0 4px 16px; }
+  .heading-placeholder { width:min(220px,45%); height:15px; border-radius:30px; background:rgba(255,255,255,.64); }
+  .heading-placeholder.small { width:72px; height:10px; opacity:.55; }
+  .card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+  .placeholder-card { min-height:190px; padding:18px; border-radius:var(--radius); }
+  .card-top { height:98px; margin-bottom:17px; border-radius:17px; border:1px solid rgba(255,255,255,.13); background:rgba(255,255,255,.12); }
+  .card-line { width:66%; height:9px; margin-top:10px; border-radius:20px; background:rgba(255,255,255,.58); }
+  .card-line.thin { width:42%; height:7px; opacity:.45; }
+  .carousel-root { padding:2px 0 12px; border-radius:24px; }
+  .carousel {
+    display:grid; grid-auto-flow:column; grid-auto-columns:clamp(225px,28vw,310px); gap:18px;
+    overflow-x:auto; overscroll-behavior-x:contain; padding:4px 2px 20px;
+    scroll-snap-type:x mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.55) rgba(255,255,255,.1);
+    -webkit-overflow-scrolling:touch;
+  }
+  .carousel-card { min-height:250px; padding:16px; border-radius:var(--radius); scroll-snap-align:start; }
+  .carousel-image { height:142px; border-radius:18px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.13); }
+  .carousel-card .card-line { width:76%; }
+  .carousel-card .card-line.thin { width:49%; }
+  .wide-panel { display:grid; grid-template-columns:1fr 1fr; gap:24px; min-height:210px; padding:24px; border-radius:30px; }
+  .wide-block { min-height:160px; border:1px solid rgba(255,255,255,.17); border-radius:21px; background:rgba(255,255,255,.08); }
+  .stack { display:grid; gap:14px; align-content:center; padding:10px; }
+  .stack span { display:block; width:86%; height:10px; border-radius:20px; background:rgba(255,255,255,.42); }
+  .stack span:nth-child(2) { width:70%; opacity:.65; }
+  .stack span:nth-child(3) { width:48%; opacity:.42; }
+  .tile-strip { display:grid; grid-template-columns:1.2fr .8fr .8fr; gap:18px; }
+  .tile { min-height:155px; border-radius:var(--radius); }
+  .tile:first-child { min-height:210px; }
+  footer { margin-top:30px; padding:28px; border-radius:28px 28px 0 0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:22px; }
+  .footer-mark { width:96px; height:10px; border-radius:30px; background:rgba(255,255,255,.55); }
+  .footer-items { display:flex; gap:10px; }
+  .footer-items span { width:42px; height:8px; border-radius:30px; background:rgba(255,255,255,.24); }
+  .status { margin:17px 4px 0; color:rgba(255,255,255,.58); text-align:center; font-size:12px; min-height:18px; }
+  @media(max-width:760px) {
+    .page-shell { width:calc(100% - 24px); }
+    header { top:8px; padding:11px 13px; }
+    .nav-shapes span { width:25px; }
+    .hero { grid-template-columns:1fr; gap:24px; min-height:auto; padding:26px; }
+    .hero-art { min-height:210px; }
+    .card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .placeholder-card { min-height:165px; padding:12px; }
+    .card-top { height:78px; }
+    .wide-panel { grid-template-columns:1fr; }
+    .wide-block { min-height:130px; }
+    .tile-strip { grid-template-columns:1fr 1fr; gap:12px; }
+    .tile:first-child { grid-column:1/-1; min-height:155px; }
+    footer { padding:22px; }
+  }
+  @media(max-width:420px) {
+    .card-grid { grid-template-columns:1fr; }
+    .nav-shapes span { width:17px; height:9px; }
+    .brand-lines { width:74px; }
+    .brand-mark { width:33px; height:33px; }
+  }
+  @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+<div class="page-shell">
+  <header class="glass-root">
+    <div class="brand" aria-hidden="true"><div class="brand-mark"></div><div class="brand-lines"><span></span><span></span></div></div>
+    <nav class="nav-shapes" aria-label="Decorative placeholder navigation"><span></span><span></span><span></span></nav>
+    <div class="avatar" aria-hidden="true"></div>
+  </header>
+
+  <main>
+    <section class="hero glass-root" aria-label="Hero placeholder">
+      <div class="hero-copy" aria-hidden="true"><span class="eyebrow"></span><span class="hero-line"></span><span class="hero-line"></span><span class="copy-line"></span><span class="copy-line"></span></div>
+      <div class="hero-art" aria-hidden="true"></div>
+    </section>
+
+    <section aria-label="Card section">
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="card-grid glass-root">
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+      </div>
+    </section>
+
+    <section aria-label="Carousel section">
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="carousel-root glass-root">
+        <div class="carousel">
+          <article class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+          <article class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+          <article class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+          <article class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+          <article class="carousel-card glass"><div class="carousel-image"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="wide-panel glass-root" aria-label="Wide content panel">
+      <div class="wide-block" aria-hidden="true"></div><div class="stack" aria-hidden="true"><span></span><span></span><span></span></div>
+    </section>
+
+    <section aria-label="Tile section">
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="tile-strip glass-root"><div class="tile glass"></div><div class="tile glass"></div><div class="tile glass"></div></div>
+    </section>
+
+    <section aria-label="Additional cards">
+      <div class="section-head" aria-hidden="true"><span class="heading-placeholder"></span><span class="heading-placeholder small"></span></div>
+      <div class="card-grid glass-root">
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+        <article class="placeholder-card glass"><div class="card-top"></div><div class="card-line"></div><div class="card-line thin"></div></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="glass-root" aria-label="Footer placeholder">
+    <span class="footer-mark" aria-hidden="true"></span>
+    <div class="footer-items" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="avatar" aria-hidden="true"></div>
+  </footer>
+  <p id="status" class="status" role="status">Starting LiquidGlass…</p>
+</div>
+
+<script type="module">
+  import { LiquidGlass } from 'https://cdn.jsdelivr.net/npm/@ybouane/liquidglass/dist/index.js';
+
+  const status = document.querySelector('#status');
+  const instances = [];
+  const settings = {
+    blurAmount: 0,
+    refraction: 0.69,
+    chromAberration: 0,
+    edgeHighlight: 0.05,
+    specular: 0,
+    fresnel: 1,
+    distortion: 0,
+    cornerRadius: 40,
+    zRadius: 40,
+    opacity: 1,
+    saturation: 0,
+    brightness: 0,
+    shadowOpacity: 0.3,
+    shadowSpread: 10,
+    bevelMode: 0,
+    floating: false
+  };
+
+  try {
+    // A distinct root per layout area lets LiquidGlass capture its siblings cleanly.
+    // All glass surfaces passed here are direct children of their root, as required.
+    for (const root of document.querySelectorAll('.glass-root')) {
+      const glassElements = [...root.querySelectorAll(':scope > .glass')];
+      if (root.matches('header, .hero, .wide-panel, footer')) glassElements.push(root);
+      if (!glassElements.length) continue;
+
+      glassElements.forEach(element => {
+        element.dataset.config = JSON.stringify({
+          ...settings,
+          cornerRadius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) || settings.cornerRadius
+        });
+      });
+
+      const instance = await LiquidGlass.init({
+        root,
+        glassElements,
+        defaults: {
+          blurAmount: settings.blurAmount,
+          refraction: settings.refraction,
+          chromAberration: settings.chromAberration,
+          edgeHighlight: settings.edgeHighlight,
+          specular: settings.specular,
+          fresnel: settings.fresnel,
+          distortion: settings.distortion,
+          cornerRadius: settings.cornerRadius,
+          zRadius: settings.zRadius,
+          opacity: settings.opacity,
+          saturation: settings.saturation,
+          brightness: settings.brightness,
+          shadowOpacity: settings.shadowOpacity,
+          shadowSpread: settings.shadowSpread,
+          bevelMode: settings.bevelMode
+        }
+      });
+      instances.push(instance);
+    }
+    status.textContent = 'LiquidGlass initialized for the header, hero, cards, carousel, panels, tiles, and footer.';
+  } catch (error) {
+    console.error('LiquidGlass initialization failed:', error);
+    status.textContent = 'LiquidGlass could not initialize. Check WebGL support and the CDN request in the browser console.';
+  }
+
+  window.addEventListener('beforeunload', () => instances.forEach(instance => instance.destroy()));
+</script>
+</body>
+</html>
